@@ -3,7 +3,6 @@ pragma solidity ^0.8.21;
 
 contract Voting {
     address public admin;
-    addre
     uint public votingDeadline;
     bool public electionEnded;
 
@@ -19,23 +18,19 @@ contract Voting {
     event ElectionEnded();
     event WinnerDeclared(string name, uint voteCount);
 
-    constructor(bytes[] memory candidateNames, uint durationInSeconds) {
-        require(candidateNames.length > 0, "At least one candidate required.");
-        require(durationInSeconds > 0, "Duration must be greater than zero.");  
-
+    constructor(string[] memory _candidateNames, uint _durationInSeconds) {
         admin = msg.sender;
-        votingDeadline = block.timestamp + durationInSeconds;
-        for (uint i = 0; i < candidateNames.length; i++) {
-            require(bytes(candidateNames[i]).length > 0, "Candidate name cannot be empty.");
-            candidates.push(Candidate({ name: string(abi.encodePacked(candidateNames[i])), voteCount: 0}));
+        votingDeadline = block.timestamp + _durationInSeconds;
+        for (uint i = 0; i < _candidateNames.length; i++) {
+            candidates.push(Candidate({ name: _candidateNames[i], voteCount: 0 }));
         }
     }
 
     function vote(uint candidateId) public {
-        require(!electionEnded, "Election already ended.");
-        require(block.timestamp <= votingDeadline, "Voting period has ended.");
+        require(!electionEnded, "Election already ended");
+        require(block.timestamp <= votingDeadline, "Voting period has ended");
         require(!hasVoted[msg.sender], "You have already voted.");
-        require(candidateId < candidates.length, "Invalid candidate ID.");
+        require(candidateId < candidates.length, "Invalid candidate ID");
 
         candidates[candidateId].voteCount++;
         hasVoted[msg.sender] = true;
@@ -44,19 +39,19 @@ contract Voting {
     }
 
     function endElection() public {
-        require(msg.sender == admin, "Only admin can end the election.");
-        require(!electionEnded, "Election already ended.");
+        require(msg.sender == admin, "Only admin can end the election");
+        require(!electionEnded, "Election already ended");
 
         electionEnded = true;
         emit ElectionEnded();
 
-        (string memory winnerName, uint winningVoteCount) = determineWinner();        
-        emit WinnerDeclared(winnerName, winningVoteCount);
+        (string memory name, uint votes) = determineWinner();
+        emit WinnerDeclared(name, votes);
     }
 
     function determineWinner() internal view returns (string memory, uint) {
         uint winningVoteCount = 0;
-        string memory winnerName;
+        string memory winnerName = "";
 
         for (uint i = 0; i < candidates.length; i++) {
             if (candidates[i].voteCount > winningVoteCount) {
@@ -68,13 +63,13 @@ contract Voting {
         return (winnerName, winningVoteCount);
     }
 
-    function getCandidates() public view returns (Candidate[] memory) {
-        return candidates;
-    }
-
     function getCandidate(uint candidateId) public view returns (string memory, uint) {
-        require(candidateId < candidates.length, "Invalid candidate ID.");
+        require(candidateId < candidates.length, "Invalid ID");
         Candidate memory c = candidates[candidateId];
         return (c.name, c.voteCount);
+    }
+
+    function getCandidatesCount() public view returns (uint) {
+        return candidates.length;
     }
 }
